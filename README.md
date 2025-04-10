@@ -1,10 +1,14 @@
 # WNCC-Convener-Assignment-Q3
 An AI-based system that can automatically categorize queries into a category
 
+
+
 #Pre - Processors
 1. I used a function called clean. I basically wnted to make the sentences lower cased and remove the "?" at the end of each sentence since I didn't want the vocabulary size grow unnecessarily. If I did't do this suppose a question is "What is Machine Learning?" and another is "Explain what machine learning is" then "What", "what", "Machine", "machine", "Learning?", "learning" will be added to my vocab. This is basically a lot of noise and my model will not learn fast and will require huge amounts of data to fine tune its predictions. Another function of my clean function is the stopword removal. So to be frank I didn't add this to my model until I read the assignment questions. Which is when I realized what it was and how effective it could be. So it means "getting rid of the super common words in a sentence that don’t add much meaning.". So I added that feature as well. As of now I didn't get the time to add stemming or lemmatization because I didn't get the time. But I did find out what it was and have thoughts on it. "Stemming is a technique in Natural Language Processing (NLP) that reduces a word to its base or root form—called the stem—by chopping off suffixes and prefixes. To treat different forms of a word (like connect, connected, connection, connecting) as the same base word, so models don't treat them as different concepts." "Lemmatization is like smart stemming—it reduces words to their dictionary base form, called a lemma, but does so by understanding the context and grammar of the word." So in this model I feel Stemming would be suffficient since its a basic classifier model and stemming would be way quicker and easier to implement. Since the grammar of words don't really matter much here. 
 2.  Next I also used tokenizers. So basically I created a vocabulary of words from the training set. I gave each word an index. Then later when a sentence is passed through my tokenize function, it retrieves the index for each word and creates a list with each word replaced by its index now called "token". So what if a word was not found in my vocabulary? It will return the token for "Unknown" ie 1 in this case. My vocabulary also uses 0 as the index for padding. So why did I add padding here? Basically later when I concatenated all tokenized sentences from the training set together it gives a tensor of shape [no of sentences, length of sentence] right. But of course u can't have shape varying at every row. So I had to fix the size of each tokenized sentence. So I added a padding "0" at the end. So now in my training set suppose the length of the longest sentence is l, the shape of my tensor is [no of sentences, l]. Now initially to be on the safe side I fixed this l to 100. But then training took a hell lot of time. So I thought of finding the maximum length of the sentence by iterating through my training set. Now one issue that can arise is if I give a sentence longer than this in evaluation. I plan to work on this later. So the question is does padding affect my training? The answer is no because "if mask is not None: attn_scores = attn_scores.masked_fill(mask == 0, -1e9)" this statement asks my model to ignore all 0 indexed posiitions.
 3. Now one thing I wish to highight is that I used these pre-processors for my training data only: i.e., for my input only. I directly used the categgory names for the output data. Now why? Beacuse its a basic classifier model and the output is a maximum of 2 words and does not require embedding... (note that embedding is used when the position of the word in the sentence is important). Why should I embed a six class output in huge dimensions and increase training time 😂. So while my source data is of shape [no of sentences, length of longest sentence], my target data is of shape [no of sentences]
+
+
 
 #Text Representation Method   (Note : From now on I use "l" for no of words in the longest sentence, and N for no of sentences, and d for dimension=512)
 I used the transformer method for training my AI. What it does? So now I have a source data tensor right. Each word is represented by a token. So right now the word knows what it is. But does it know it's meaning? Does it know what its relation with the other words in the sentence is? Does it know what its position is? 
@@ -68,3 +72,30 @@ Now you have the attention score table of A above. So multiplying that with A gi
 
 were each cell represent how much attention a word gives its sentence per dimension. 
 Now multi head attention recombine everything to give a tensor of shape [5,10,8] were now every sentence has 10 words and each word has 8 elements representing how much attention each dimension gives it sentence.
+5. Now the encoder passes it through normalization and adds these probabilities to the original embeddings. 
+6. After this it passes throught a PositionFeedForward that basically fine tunes these meanings locally. i.e, each word now without looking at any other word asks itself what it means and goes on a hourney of self discovery! 🤣 This layer is also learnt during training. Were first a linar transformation maps each word from a d length vector to a vector of length d_ff. Then it non linearizes (I don't even knpw if that's a word but whatever) that to add more complexity to the word and then maps it back to a d lenght vector. Of course the weights and biases during the transformations are fine tuned during training. 
+7. Then it goes through another normalizaton and finally comes out of that encoder block with a shape of [N,l,d]
+8. So this block can be used multiple times depending on the number of layers in the transformer model. Mine uses 6 layers. So each output is then passed as input to the next layer. With this you see just how well tuned it becomes by the time it comes out. 
+9. Now at the end of this I have a tensor of shape [N,l,d]. Now from this point on my transformer deviates from the traditional model. I was really worried I would have to crack my head over the decoder block as well. But making the assignment a classifier model greatly simplified things for me. So first this is how each sentence looks like
+| Word ↓ / Dim → | d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 |
+|----------------|----|----|----|----|----|----|----|----|
+| w1             |    |    |    |    |    |    |    |    |
+| w2             |    |    |    |    |    |    |    |    |
+| w3             |    |    |    |    |    |    |    |    |
+| w4             |    |    |    |    |    |    |    |    |
+| w5             |    |    |    |    |    |    |    |    |
+| w6             |    |    |    |    |    |    |    |    |
+| w7             |    |    |    |    |    |    |    |    |
+| w8             |    |    |    |    |    |    |    |    |
+| w9             |    |    |    |    |    |    |    |    |
+| w10            |    |    |    |    |    |    |    |    |
+
+So now we consolidate how much attention each word contibutes over each dimension by taking mean over dimension 1 to give a tensor of shape [N,d]
+10. This is then mapped to a vector of length d itself. Most likely this transformation learns the weights and biases in such a way that this net attention score is mapped to the index of the target data. This of course happens only once the model is trained. 
+11. I'll talk about the model training in the next question.
+
+
+
+
+#Why this method?
+So basically I researched into the other models and discovered that the TF-IDF model just treats the words as a bunch of words without understanding its meaning. It doesn't know what to focus on and gives equal attention to all words thus making training it a very difficult process. The Word2Vec averages out the attention between all words and is still innefective. But transformers knows how much weight to give each word in a sentence. Like "How is django used for web development" will probably give a lot of weight to web and development and then to django as well. This model according to me is the most effective which is why it's being used in so many AIML applicatons.
