@@ -23,7 +23,7 @@ This is a matrix multiplication between:
 A: shape [5, 2, 10, 4]            #Query
 A.transpose(-2, -1): shape [5, 2, 4, 10]               #Key
 So the resulting matrix now has a shape [5,2,10,10] which basically gives the energy. What does this represent? I'll show how each head looks like. 
-| Queries ↓ / Keys → | Word 1 | Word 2 | Word 3 | Word 4 | Word 5 | Word 6 | Word 7 | Word 8 | Word 9 | Word 10 |
+| Queries ↓ / Keys → | Word 1 | Word 2 | Word 3 | Word 4 | Word 5 | Word 6 | Word 7 | Word 8 | Word 9 |  Word 10 |
 |--------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|----------|
 | Word 1             |        |        |        |        |        |        |        |        |        |          |
 | Word 2             |        |        |        |        |        |        |        |        |        |          |
