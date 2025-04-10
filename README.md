@@ -78,6 +78,7 @@ Now multi head attention recombine everything to give a tensor of shape [5,10,8]
 7. Then it goes through another normalizaton and finally comes out of that encoder block with a shape of [N,l,d]
 8. So this block can be used multiple times depending on the number of layers in the transformer model. Mine uses 6 layers. So each output is then passed as input to the next layer. With this you see just how well tuned it becomes by the time it comes out. 
 9. Now at the end of this I have a tensor of shape [N,l,d]. Now from this point on my transformer deviates from the traditional model. I was really worried I would have to crack my head over the decoder block as well. But making the assignment a classifier model greatly simplified things for me. So first this is how each sentence looks like
+
 | Word ↓ / Dim → | d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 |
 |----------------|----|----|----|----|----|----|----|----|
 | w1             |    |    |    |    |    |    |    |    |
@@ -92,6 +93,7 @@ Now multi head attention recombine everything to give a tensor of shape [5,10,8]
 | w10            |    |    |    |    |    |    |    |    |
 
 So now we consolidate how much attention each word contibutes over each dimension by taking mean over dimension 1 to give a tensor of shape [N,d]
+
 10. This is then mapped to a vector of length d itself. Most likely this transformation learns the weights and biases in such a way that this net attention score is mapped to the index of the target data. This of course happens only once the model is trained. 
 11. I'll talk about the model training in the next question.
 
