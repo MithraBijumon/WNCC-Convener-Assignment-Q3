@@ -91,8 +91,9 @@ Now multi head attention recombine everything to give a tensor of shape [5,10,8]
 
 So now we consolidate how much attention each word contibutes over each dimension by taking mean over dimension 1 to give a tensor of shape [N,d]
 
-10. This is then mapped to a vector of length d itself. Most likely this transformation learns the weights and biases in such a way that this net attention score is mapped to the index of the target data. This of course happens only once the model is trained. 
-11. I'll talk about the model training in the next question.
+10. This is then mapped to a vector of length d itself. Most likely this transformation learns the weights and biases in such a way that this net attention score is mapped to the index of the target data. This of course happens only once the model is trained.
+11. So now the very final output we get which is of course of shape [N,d] (yess that sense of satisfaction when I say very final output 😎), what does it represent? Our target output as we know is a tensor of shape [N]. Then why are we getting an output of shape [N,d]. Did I go wrong somewhere?? So the thing is rest assured we're still on the right track. 
+12. I'll talk about the model training in the next question.
 
 
 
