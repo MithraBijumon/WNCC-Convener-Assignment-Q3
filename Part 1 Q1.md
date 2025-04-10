@@ -67,33 +67,36 @@ Now you have the attention score table of A above. So multiplying that with A gi
 | w9             |      |      |      |      |
 | w10            |      |      |      |      |
 
-were each cell represent how much attention a word gives its sentence per dimension. 
-Now multi head attention recombine everything to give a tensor of shape [5,10,8] were now every sentence has 10 words and each word has 8 elements representing how much attention each dimension gives it sentence.
+were each cell represent how much attention a word gives its sentence per dimension. Now the question is how does this finally result in giving a meaning to the sentence? Ok the sentence has picked up important words and weighted each but the sentence still doesn't know what it means right?
+This is where the linear maps come into picture. Each one maps these weighted words and give out a tensor that reads out the meaning of the sentence to the model. Again the weights and biases are determined by training it. 
+Now multi head attention recombine everything to give a tensor of shape [5,10,8] were now every sentence has 10 words and each word has 8 elements representing the meaning of the sentence and now it is closer to knowing what it might point to once it knows this meaning.
 
-5. Now the encoder passes it through normalization and adds these probabilities to the original embeddings. 
-6. After this it passes throught a PositionFeedForward that basically fine tunes these meanings locally. i.e, each word now without looking at any other word asks itself what it means and goes on a hourney of self discovery! 🤣 This layer is also learnt during training. Were first a linar transformation maps each word from a d length vector to a vector of length d_ff. Then it non linearizes (I don't even knpw if that's a word but whatever) that to add more complexity to the word and then maps it back to a d lenght vector. Of course the weights and biases during the transformations are fine tuned during training. 
+5. Now the encoder passes it through normalization and adds these meanings to the original embeddings. 
+6. After this it passes throught a PositionFeedForward that basically fine tunes these meanings locally. i.e, each word now without looking at any other word asks itself what it means and goes on a hourney of self discovery! 🤣 This layer is also learnt during training. Were first a linar transformation maps each word from a d length vector to a vector of length d_ff. Then it non linearizes (I don't even knpw if that's a word but whatever) that to add more complexity to the word and then maps it back to a d lenght vector. Of course the weights and biases during the transformations are fine tuned during training. So in simple terms the words in each sentence now know their meaning as well. So basically we have the meaning of the words as well as their weights.
 7. Then it goes through another normalizaton and finally comes out of that encoder block with a shape of [N,l,d]
 8. So this block can be used multiple times depending on the number of layers in the transformer model. Mine uses 6 layers. So each output is then passed as input to the next layer. With this you see just how well tuned it becomes by the time it comes out. 
 9. Now at the end of this I have a tensor of shape [N,l,d]. Now from this point on my transformer deviates from the traditional model. I was really worried I would have to crack my head over the decoder block as well. But making the assignment a classifier model greatly simplified things for me. So first this is how each sentence looks like
 
-| Word ↓ / Dim → | d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 |
-|----------------|----|----|----|----|----|----|----|----|
-| w1             |    |    |    |    |    |    |    |    |
-| w2             |    |    |    |    |    |    |    |    |
-| w3             |    |    |    |    |    |    |    |    |
-| w4             |    |    |    |    |    |    |    |    |
-| w5             |    |    |    |    |    |    |    |    |
-| w6             |    |    |    |    |    |    |    |    |
-| w7             |    |    |    |    |    |    |    |    |
-| w8             |    |    |    |    |    |    |    |    |
-| w9             |    |    |    |    |    |    |    |    |
-| w10            |    |    |    |    |    |    |    |    |
+| Meaning ↓ / Dim → | d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 |
+|-------------------|----|----|----|----|----|----|----|----|
+| m1                |    |    |    |    |    |    |    |    |
+| m2                |    |    |    |    |    |    |    |    |
+| m3                |    |    |    |    |    |    |    |    |
+| m4                |    |    |    |    |    |    |    |    |
+| m5                |    |    |    |    |    |    |    |    |
+| m6                |    |    |    |    |    |    |    |    |
+| m7                |    |    |    |    |    |    |    |    |
+| m8                |    |    |    |    |    |    |    |    |
+| m9                |    |    |    |    |    |    |    |    |
+| m10               |    |    |    |    |    |    |    |    |
 
-So now we consolidate how much attention each word contibutes over each dimension by taking mean over dimension 1 to give a tensor of shape [N,d]
+So as I said earlier this table represents the meaning of the sentence with a shape [N,d]. Each dimension contributes to the meaning. So now true we get 10 meanings right now but I'll resolve this now.
 
-10. This is then mapped to a vector of length d itself. Most likely this transformation learns the weights and biases in such a way that this net attention score is mapped to the index of the target data. This of course happens only once the model is trained.
-11. So now the very final output we get which is of course of shape [N,d] (yess that sense of satisfaction when I say very final output 😎), what does it represent? Our target output as we know is a tensor of shape [N]. Then why are we getting an output of shape [N,d]. Did I go wrong somewhere?? So the thing is rest assured we're still on the right track. 
-12. I'll talk about the model training in the next question.
+10. We pool over dimension = 1 to get a single meaning for every sentence of course with each dimesnion pointing to a meaning and hence a class.
+11. This is then mapped to a vector of length (no of classes). Now this transformation basically converts it from a meaning to what it might be pointing to. Were every dimension points to one of the 6 classes with some weight. Again the weights and biases are determined only once the model is trained.
+12. So now the very final output we get which is of course of shape [N,no_of_classes] (yess that sense of satisfaction when I say very final output 😎), what does it represent? Our target output as we know is a tensor of shape [N]. Then why are we getting an output of shape [N,no_of_classes]. Did I go wrong somewhere?? So the thing is rest assured we're still on the right track. For each sentence, each value represents a score of how confident the model is in each class. Higher the score more will be the probability the model will choose that class as the final output.
+13. How do you get an index out of this? Simple pass these scores through argmax which returns the index with the highest score. So then we can access it to actually classify the data later during evaluation(like I did in my model)
+14. I'll talk about the model training in the next question.
 
 
 
