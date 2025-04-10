@@ -35,6 +35,7 @@ So the resulting matrix now has a shape [5,2,10,10] which basically gives the en
 | Word 8             |        |        |        |        |        |        |        |        |        |          |
 | Word 9             |        |        |        |        |        |        |        |        |        |          |
 | Word 10            |        |        |        |        |        |        |        |        |        |          |
+
 So each sentence has 2 such tables representing each head. Why did we divide it into heads becomes clear now... to make it into batches so that computation becomes faster. This is also the reason we get increasing and decreasing losses because the heads vary. 
 So basically every this tensor shows how much attention each word must give to the other words in the sentence to realize what it means. This is then softmaxed to give the probabilities. Now these probabilities are vector mulitplied with the original A again. So now suppose A is a head with the following structure.
 | Word ↓ / Dim → | dim1 | dim2 | dim3 | dim4 |
@@ -49,6 +50,7 @@ So basically every this tensor shows how much attention each word must give to t
 | w8             |      |      |      |      |
 | w9             |      |      |      |      |
 | w10            |      |      |      |      |
+
 Now you have the attention score table of A above. So multiplying that with A gives
 | Word ↓ / Dim → | dim1 | dim2 | dim3 | dim4 |
 |----------------|------|------|------|------|
@@ -62,5 +64,6 @@ Now you have the attention score table of A above. So multiplying that with A gi
 | w8             |      |      |      |      |
 | w9             |      |      |      |      |
 | w10            |      |      |      |      |
+
 were each cell represent how much attention a word gives its sentence per dimension. 
 Now multi head attention recombine everything to give a tensor of shape [5,10,8] were now every sentence has 10 words and each word has 8 elements representing how much attention each dimension gives it sentence.
