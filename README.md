@@ -12,17 +12,17 @@ I used the transformer method for training my AI. What it does? So now I have a 
 2. Next I pass it through a positional encoder. Why is this needed? To let the words understand were it lies in the sentence. So how does it work? First it initializes a tensor "pe" with 0s of shape [l,d]. Next it initializes a tensor [0,1,2,3,4....l] of shape [l-1,1] and another tensor [0,2,4,....512]*(-(math.log(10000.0) / d_model))) (basically this tensor helps create smooth but unique positional signals across dimensions by scaling down the input to sin and cos. Without it, all positional encodings would look the same and lose their ability to differentiate between token positions) of shape [1, d/2] and matrix multiplies them to give a tensor of shape [l,d/2]. Each value is then either signed(and added to even columns of pe) or cosined(and added to odd columns of pe). pe now holds the positional encodings information. Then pe is registered as a "non-trainable" tensor (from what I understood it means grad is not calculated for it when passed through register_buffer) and now its shape is set [1,l,d]. Later when training dataset is passed through positional encoder it returns a tensor of embeddings that also has positional knowledge now.
 3. Now for the final processed dataset this encoded one is passed through a dropout function. Whhat does it do? Suppose dropout is 0.1(as is here), then during training my model "drops" or randomly sets 10% of my elements to 0 (i.e., padded) to prevent overfitting. It now does not overly rely on one specific sentence for training.
 4. So now what does my transformer do? It passes my dataset through an encoder block. Traditionally a transformer has an encoder and decoder block. I used the very traditional model but made changes so that now my transformer has only an encoder block. This is because we don't need a decoder block since my model is only classifying things.
-This encoder block has a multi head attention. This is the deal breaker. It allows each word in a sentence to know how it relates to every other word including itself. First it splits each word embedding into a specific number of heads. And then gives an attention score for each head and then combines it again. I'll explain. Suppose the source has shape [N,l,d] and you want 8 heads. First the data is made into shape [N, no_of_heads = 8, l, d/8]. Now for each head which is of shape [1,d/8] is matrix multiplied by the transpose of the head of every word in the sentence in all sentences. This is then normalized by dividing with math.sqrt(self.d_k). Suppose you call this the energy of each word(i.e., how much attention it deserves). I'll explain what this energy is in detail. Suppose you have a dataset A of shape [5, 2, 10, 4], where:
-5 = number of sentences (batch size)
-2 = number of attention heads
-10 = number of words
-4 = dimension of each head
-So for each sentence and each head, you're encoding 10 words into 4-dimensional vectors.
-A @ A.transpose(-2, -1)
-This is a matrix multiplication between:
-A: shape [5, 2, 10, 4]            #Query
-A.transpose(-2, -1): shape [5, 2, 4, 10]               #Key
-So the resulting matrix now has a shape [5,2,10,10] which basically gives the energy. What does this represent? I'll show how each head looks like.
+This encoder block has a multi head attention. This is the deal breaker. It allows each word in a sentence to know how it relates to every other word including itself. First it splits each word embedding into a specific number of heads. And then gives an attention score for each head and then combines it again. I'll explain. Suppose the source has shape [N,l,d] and you want 8 heads. First the data is made into shape [N, no_of_heads = 8, l, d/8]. Now for each head which is of shape [1,d/8] is matrix multiplied by the transpose of the head of every word in the sentence in all sentences. This is then normalized by dividing with math.sqrt(self.d_k). Suppose you call this the energy of each word(i.e., how much attention it deserves). I'll explain what this energy is in detail. Suppose you have a dataset - A of shape [5, 2, 10, 4], where:
+- 5 = number of sentences (batch size)
+- 2 = number of attention heads
+- 10 = number of words
+- 4 = dimension of each head
+- So for each sentence and each head, you're encoding 10 words into 4-dimensional vectors.
+- A @ A.transpose(-2, -1)
+- This is a matrix multiplication between:
+- A: shape [5, 2, 10, 4]            #Query
+- A.transpose(-2, -1): shape [5, 2, 4, 10]               #Key
+- So the resulting matrix now has a shape [5,2,10,10] which basically gives the energy. What does this represent? I'll show how each head looks like.
 
 | Queries ↓ / Keys → | Word 1 | Word 2 | Word 3 | Word 4 | Word 5 | Word 6 | Word 7 | Word 8 | Word 9 | Word 10 |
 |--------------------|--------|--------|--------|--------|--------|--------|--------|--------|--------|----------|
