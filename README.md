@@ -100,5 +100,5 @@ So now we consolidate how much attention each word contibutes over each dimensio
 
 
 
-#Why this method?
+# Why this method?
 So basically I researched into the other models and discovered that the TF-IDF model just treats the words as a bunch of words without understanding its meaning. It doesn't know what to focus on and gives equal attention to all words thus making training it a very difficult process. The Word2Vec averages out the attention between all words and is still innefective. But transformers knows how much weight to give each word in a sentence. Like "How is django used for web development" will probably give a lot of weight to web and development and then to django as well. This model according to me is the most effective which is why it's being used in so many AIML applicatons.
